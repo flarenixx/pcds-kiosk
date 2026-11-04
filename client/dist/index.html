@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f2f8fd" />
+    <script>
+      (function () {
+        var root = document.documentElement;
+        if (/^\/kiosk(\/|$)/.test(location.pathname)) return;
+        var theme = null;
+        try {
+          theme = localStorage.getItem('pcds_theme');
+        } catch (e) {}
+        if (theme !== 'dark' && theme !== 'light') {
+          theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        root.setAttribute('data-theme', theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'dark' ? '#07080a' : '#f2f8fd');
+      })();
+    </script>
+    <title>PCDS LRC</title>
+    <link rel="icon" type="image/png" href="/images/pcds_logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Public+Sans:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/index-CSHgzXFQ.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-9Hvm_-DW.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
