@@ -41,6 +41,9 @@ function errorMessage(err) {
   return MSG_FAILED;
 }
 
+// Taps are refused outside library hours (set by the super admin in Settings).
+const closedHours = (err) => (err instanceof ApiError && err.status === 403 && err.fields?.libraryClosed) || null;
+
 function Icon({ name }) {
   const common = {
     width: 28,
@@ -147,6 +150,8 @@ export default function Kiosk() {
   const [phase, setPhase] = useState('idle'); // idle | busy | success | error
   const [result, setResult] = useState(null); // { studentId, action, recordedAt }
   const [message, setMessage] = useState('');
+  const [errorTitle, setErrorTitle] = useState('Scan unsuccessful');
+  const [library, setLibrary] = useState(null); // { open, hours } from the server
   const [focused, setFocused] = useState(() => document.hasFocus());
 
   const [messages, setMessages] = useState([]); // pop-ups waiting to be shown, first one is on screen
@@ -173,8 +178,9 @@ export default function Kiosk() {
   );
 
   const showError = useCallback(
-    (text) => {
+    (text, title = 'Scan unsuccessful') => {
       setResult(null);
+      setErrorTitle(title);
       setMessage(text);
       setPhase('error');
       scheduleClear(ERROR_MS);
@@ -208,7 +214,11 @@ export default function Kiosk() {
         setToasts((list) => [...list, toast].slice(-MAX_TOASTS));
         scheduleClear(SUCCESS_MS);
       } catch (err) {
-        showError(errorMessage(err));
+        const hours = closedHours(err);
+        if (hours) {
+          setLibrary((l) => ({ ...l, open: false, hours }));
+          showError(`Attendance is only recorded during library hours: ${hours}.`, 'The library is closed');
+        } else showError(errorMessage(err));
       } finally {
         busyRef.current = false;
       }
@@ -262,6 +272,29 @@ export default function Kiosk() {
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [submitScan]);
+
+  // Whether the library is open. Reloaded the moment the super admin changes the
+  // hours (live update) and right at the next opening or closing time, so the
+  // screen never needs a refresh.
+  const loadLibrary = useCallback(
+    () =>
+      api('/kiosk/status')
+        .then((data) => setLibrary({ open: data.open, hours: data.hours, nextChangeAt: data.nextChangeAt }))
+        .catch(() => {}),
+    []
+  );
+  useEffect(() => {
+    loadLibrary();
+  }, [loadLibrary]);
+  useLiveReload(['library'], loadLibrary);
+  useEffect(() => {
+    if (!library?.nextChangeAt) return undefined;
+    // A second late, so the server already sees the new state. Long waits are
+    // re-checked hourly in case the computer's clock or sleep shifts the timer.
+    const wait = Math.max(new Date(library.nextChangeAt).getTime() - Date.now() + 1000, 1000);
+    const timer = setTimeout(loadLibrary, Math.min(wait, 60 * 60 * 1000));
+    return () => clearTimeout(timer);
+  }, [library, loadLibrary]);
 
   const currentMessage = messages[0] || null;
   const proceed = useCallback(() => setMessages((q) => q.slice(1)), []);
@@ -363,8 +396,17 @@ export default function Kiosk() {
               <div className="kiosk-holder">
                 <span className="kiosk-holder-slot" aria-hidden="true" />
                 <div className="kiosk-idcard is-wait">
-                  <img className="kiosk-idcard-tap" src="/images/contactless_icon.gif" alt="" />
-                  <p className="kiosk-idcard-prompt">Please tap your RFID card on the reader.</p>
+                  {library && !library.open ? (
+                    <>
+                      <p className="kiosk-idcard-closed">The library is closed</p>
+                      <p className="kiosk-idcard-prompt">Library hours: {library.hours}</p>
+                    </>
+                  ) : (
+                    <>
+                      <img className="kiosk-idcard-tap" src="/images/contactless_icon.gif" alt="" />
+                      <p className="kiosk-idcard-prompt">Please tap your RFID card on the reader.</p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -430,7 +472,7 @@ export default function Kiosk() {
               <span className="kiosk-badge is-error">
                 <Icon name="alert" />
               </span>
-              <p className="kiosk-state-title is-error">Scan unsuccessful</p>
+              <p className="kiosk-state-title is-error">{errorTitle}</p>
               <p className="kiosk-state-note">{message}</p>
             </div>
           )}

@@ -11,6 +11,10 @@ const ACTION_LABELS = {
   'auth.logout': 'Signed out',
   'auth.login_failed': 'Failed sign-in',
   'account.register': 'Account registered',
+  'account.create': 'Account created',
+  'account.deactivate': 'Account deactivated',
+  'account.reactivate': 'Account reactivated',
+  'account.delete': 'Account deleted',
   'attendance.time_in': 'Manual time in',
   'attendance.time_out': 'Manual time out',
   'attendance.edit': 'Attendance edited',
@@ -20,6 +24,8 @@ const ACTION_LABELS = {
   'student.promote': 'Student promoted',
   'student.delete': 'Student deleted',
   'student.import': 'Students imported',
+  'student.deactivate': 'Student deactivated',
+  'student.reactivate': 'Student reactivated',
   'message.rule_add': 'ID message added',
   'message.rule_edit': 'ID message edited',
   'message.rule_delete': 'ID message deleted',
@@ -28,6 +34,9 @@ const ACTION_LABELS = {
   'message.pin': 'Kiosk message kept',
   'message.unpin': 'Kept message removed',
   'report.export': 'Analytics report exported',
+  'settings.library_hours': 'Library hours changed',
+  'database.export': 'Database exported',
+  'database.import': 'Database restored',
   'audit.delete': 'Audit logs deleted',
 };
 const CATEGORIES = [
@@ -38,6 +47,8 @@ const CATEGORIES = [
   { value: 'student', label: 'Student records' },
   { value: 'message', label: 'Kiosk messages' },
   { value: 'report', label: 'Analytics exports' },
+  { value: 'settings', label: 'Settings' },
+  { value: 'database', label: 'Database backups' },
   { value: 'audit', label: 'Audit log deletions' },
 ];
 const ROLE_FILTERS = [
